@@ -1,0 +1,9 @@
+fastapi>=0.115.0
+uvicorn[standard]
+strands-agents[gemini]
+strands-agents-tools
+chromadb
+pypdf
+python-multipart
+python-dotenv
+sse-starlette
