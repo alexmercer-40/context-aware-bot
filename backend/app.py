@@ -16,7 +16,20 @@ from rag.vectordb import memory_collection, documents_collection
 
 log = logging.getLogger("app")
 
-app = FastAPI(title="Context-Aware Chatbot API")
+app = FastAPI(
+    title="Context-Aware Chatbot API",
+    description=(
+        "A GenAI-powered chatbot with **long-term memory** and **RAG** (Retrieval-Augmented Generation). "
+        "Built with FastAPI, Strands Agent, Google Gemini, and ChromaDB.\n\n"
+        "### Features\n"
+        "- **Chat** — streaming & non-streaming responses via Gemini LLM\n"
+        "- **Memory** — automatically remembers user facts across conversations\n"
+        "- **RAG** — upload PDFs/text files and ask questions about them\n"
+        "- **Tool Calling** — agent autonomously decides when to save/search memory or documents"
+    ),
+    version="1.0.0",
+    contact={"name": "Rachit Raj Singh", "url": "https://github.com/alexmercer-40/context-aware-bot"},
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,16 +40,20 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"])
 async def health():
+    """Check if the API is running and which model is configured."""
     from config import MODEL_ID, GEMINI_API_KEY
     key_preview = GEMINI_API_KEY[:8] + "..." if len(GEMINI_API_KEY) > 8 else "(not set)"
     return {"status": "ok", "model": MODEL_ID, "key_prefix": key_preview}
 
 
-@app.post("/chat", response_model=ChatResponse)
+@app.post("/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat(req: ChatRequest):
-    """Non-streaming chat: send a message and get the full response."""
+    """Send a message and receive the complete response (non-streaming).
+
+    The agent may internally call tools (save_memory, search_memory, search_document)
+    before returning the final answer."""
     try:
         agent = create_agent()
         result = agent(req.message)
@@ -54,9 +71,15 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/chat/stream")
+@app.post("/chat/stream", tags=["Chat"])
 async def chat_stream(req: ChatRequest):
-    """SSE streaming chat: tokens and tool events are pushed as they arrive."""
+    """Stream a chat response via Server-Sent Events (SSE).
+
+    **Event types:**
+    - `token` — a text chunk of the assistant's reply
+    - `tool` — name of a tool the agent is currently invoking
+    - `done` — final complete response text
+    - `error` — error message if something went wrong"""
 
     async def event_generator():
         agent = create_agent()
@@ -67,9 +90,12 @@ async def chat_stream(req: ChatRequest):
     return EventSourceResponse(event_generator())
 
 
-@app.post("/upload", response_model=UploadResponse)
+@app.post("/upload", response_model=UploadResponse, tags=["Documents"])
 async def upload(file: UploadFile = File(...)):
-    """Upload a PDF or text file for RAG ingestion."""
+    """Upload a PDF, TXT, or Markdown file for RAG ingestion.
+
+    The file is chunked, embedded, and stored in ChromaDB. Once uploaded,
+    the chatbot can answer questions about its content via the `search_document` tool."""
     allowed = (".pdf", ".txt", ".md")
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in allowed:
@@ -93,9 +119,12 @@ async def upload(file: UploadFile = File(...)):
             os.unlink(tmp_path)
 
 
-@app.get("/memories")
+@app.get("/memories", tags=["Memory"])
 async def get_memories():
-    """Return all stored long-term memories for the sidebar."""
+    """Retrieve all long-term memories stored about the user.
+
+    Memories are auto-saved by the agent when users share personal info
+    (name, skills, preferences, goals)."""
     count = memory_collection.count()
     if count == 0:
         return {"memories": []}
@@ -120,9 +149,9 @@ async def get_memories():
     return {"memories": memories}
 
 
-@app.get("/documents")
+@app.get("/documents", tags=["Documents"])
 async def get_documents():
-    """Return a list of uploaded documents with chunk counts."""
+    """List all uploaded documents with their chunk counts."""
     count = documents_collection.count()
     if count == 0:
         return {"documents": []}
