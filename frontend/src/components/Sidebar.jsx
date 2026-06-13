@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Sparkles, Plus, Brain, RefreshCw, FileText } from "lucide-react";
+import { Sparkles, Plus, Brain, RefreshCw, FileText, X } from "lucide-react";
 import { fetchMemories, fetchDocuments } from "../api/chatApi";
 
 const CATEGORY_COLORS = {
@@ -10,7 +10,7 @@ const CATEGORY_COLORS = {
   general: "text-slate-300 bg-slate-600/20",
 };
 
-export default function Sidebar({ onNewChat, refreshKey }) {
+export default function Sidebar({ onNewChat, refreshKey, isOpen, onClose }) {
   const [memories, setMemories] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -37,92 +37,117 @@ export default function Sidebar({ onNewChat, refreshKey }) {
   }, [refreshKey]);
 
   return (
-    <aside className="flex h-full w-72 shrink-0 flex-col border-r border-slate-800 bg-slate-900/60 backdrop-blur">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 px-4 py-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
-          <Sparkles size={18} className="text-white" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-100">Context Chat</p>
-          <p className="text-[11px] text-slate-500">Powered by Gemini</p>
-        </div>
-      </div>
-
-      {/* New chat */}
-      <div className="px-3">
-        <button
-          onClick={onNewChat}
-          className="flex w-full items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/40 px-3 py-2.5 text-sm text-slate-200 transition hover:border-indigo-500/50 hover:bg-slate-800"
-        >
-          <Plus size={16} /> New chat
-        </button>
-      </div>
-
-      {/* Uploaded documents */}
-      {documents.length > 0 && (
-        <>
-          <div className="mt-5 flex items-center gap-2 px-4 text-xs font-medium uppercase tracking-wide text-slate-400">
-            <FileText size={14} /> Documents
-          </div>
-          <div className="mt-2 space-y-1.5 px-3">
-            {documents.map((doc, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/30 px-2.5 py-2"
-              >
-                <FileText size={14} className="shrink-0 text-indigo-400" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-xs font-medium text-slate-200">
-                    {doc.filename}
-                  </p>
-                  <p className="text-[10px] text-slate-500">
-                    {doc.chunks} chunks
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
+    <>
+      {/* Mobile backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={onClose}
+        />
       )}
 
-      {/* Memories panel */}
-      <div className="mt-5 flex items-center justify-between px-4">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-          <Brain size={14} /> Long-term memory
-        </div>
-        <button
-          onClick={load}
-          title="Refresh"
-          className="text-slate-500 transition hover:text-slate-300"
-        >
-          <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
-        </button>
-      </div>
-
-      <div className="mt-2 flex-1 space-y-2 overflow-y-auto px-3 pb-4">
-        {memories.length === 0 && !loading && (
-          <p className="px-1 py-3 text-xs text-slate-600">
-            Nothing remembered yet. Tell the assistant something about yourself.
-          </p>
-        )}
-        {memories.map((m) => {
-          const color = CATEGORY_COLORS[m.category] || CATEGORY_COLORS.general;
-          return (
-            <div
-              key={m.id}
-              className="rounded-lg border border-slate-800 bg-slate-800/30 p-2.5"
-            >
-              <span
-                className={`mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${color}`}
-              >
-                {m.category}
-              </span>
-              <p className="text-xs leading-snug text-slate-300">{m.text}</p>
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-slate-800 bg-slate-900 backdrop-blur
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          md:static md:z-auto md:translate-x-0 md:bg-slate-900/60
+        `}
+      >
+        {/* Brand + close button */}
+        <div className="flex items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
+              <Sparkles size={18} className="text-white" />
             </div>
-          );
-        })}
-      </div>
-    </aside>
+            <div>
+              <p className="text-sm font-semibold text-slate-100">Context Chat</p>
+              <p className="text-[11px] text-slate-500">Powered by Gemini</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-slate-200 md:hidden"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* New chat */}
+        <div className="px-3">
+          <button
+            onClick={() => { onNewChat(); onClose(); }}
+            className="flex w-full items-center gap-2 rounded-xl border border-slate-700 bg-slate-800/40 px-3 py-2.5 text-sm text-slate-200 transition hover:border-indigo-500/50 hover:bg-slate-800"
+          >
+            <Plus size={16} /> New chat
+          </button>
+        </div>
+
+        {/* Uploaded documents */}
+        {documents.length > 0 && (
+          <>
+            <div className="mt-5 flex items-center gap-2 px-4 text-xs font-medium uppercase tracking-wide text-slate-400">
+              <FileText size={14} /> Documents
+            </div>
+            <div className="mt-2 space-y-1.5 px-3">
+              {documents.map((doc, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-800/30 px-2.5 py-2"
+                >
+                  <FileText size={14} className="shrink-0 text-indigo-400" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-medium text-slate-200">
+                      {doc.filename}
+                    </p>
+                    <p className="text-[10px] text-slate-500">
+                      {doc.chunks} chunks
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Memories panel */}
+        <div className="mt-5 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+            <Brain size={14} /> Long-term memory
+          </div>
+          <button
+            onClick={load}
+            title="Refresh"
+            className="text-slate-500 transition hover:text-slate-300"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+          </button>
+        </div>
+
+        <div className="mt-2 flex-1 space-y-2 overflow-y-auto px-3 pb-4">
+          {memories.length === 0 && !loading && (
+            <p className="px-1 py-3 text-xs text-slate-600">
+              Nothing remembered yet. Tell the assistant something about yourself.
+            </p>
+          )}
+          {memories.map((m) => {
+            const color = CATEGORY_COLORS[m.category] || CATEGORY_COLORS.general;
+            return (
+              <div
+                key={m.id}
+                className="rounded-lg border border-slate-800 bg-slate-800/30 p-2.5"
+              >
+                <span
+                  className={`mb-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium uppercase ${color}`}
+                >
+                  {m.category}
+                </span>
+                <p className="text-xs leading-snug text-slate-300">{m.text}</p>
+              </div>
+            );
+          })}
+        </div>
+      </aside>
+    </>
   );
 }
