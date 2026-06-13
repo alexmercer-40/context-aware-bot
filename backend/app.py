@@ -1,5 +1,7 @@
 """FastAPI application — endpoints for chat, streaming, file upload, and memories."""
 
+import asyncio
+import logging
 import os
 import tempfile
 
@@ -12,6 +14,8 @@ from agent import create_agent, stream_agent
 from rag.ingest import ingest_document
 from rag.vectordb import memory_collection, documents_collection
 
+log = logging.getLogger("app")
+
 app = FastAPI(title="Context-Aware Chatbot API")
 
 app.add_middleware(
@@ -21,9 +25,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# One agent instance per server process (conversation memory lives here).
-agent = create_agent()
 
 
 @app.get("/health")
@@ -35,6 +36,7 @@ async def health():
 async def chat(req: ChatRequest):
     """Non-streaming chat: send a message and get the full response."""
     try:
+        agent = create_agent()
         result = agent(req.message)
         if hasattr(result, "message"):
             msg = result.message
@@ -55,6 +57,8 @@ async def chat_stream(req: ChatRequest):
     """SSE streaming chat: tokens and tool events are pushed as they arrive."""
 
     async def event_generator():
+        agent = create_agent()
+        log.info("Created fresh agent for stream request")
         async for event in stream_agent(agent, req.message):
             yield ServerSentEvent(data=event["data"], event=event["event"])
 
