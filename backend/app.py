@@ -29,7 +29,9 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}
+    from config import MODEL_ID, GEMINI_API_KEY
+    key_preview = GEMINI_API_KEY[:8] + "..." if len(GEMINI_API_KEY) > 8 else "(not set)"
+    return {"status": "ok", "model": MODEL_ID, "key_prefix": key_preview}
 
 
 @app.post("/chat", response_model=ChatResponse)
