@@ -52,7 +52,7 @@ export default function App() {
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-950">
+    <div className="app-shell flex w-screen overflow-hidden bg-slate-950">
       <Sidebar
         onNewChat={handleNewChat}
         refreshKey={memoryRefreshKey}

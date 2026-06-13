@@ -26,7 +26,7 @@ export default function InputBar({ onSend, onStop, isStreaming, onOpenUpload }) 
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-3 pb-3 sm:px-4 sm:pb-5">
+    <div className="mx-auto w-full max-w-3xl px-3 pb-safe sm:px-4">
       <div className="flex items-end gap-1.5 rounded-2xl border border-slate-700/80 bg-slate-800/70 p-1.5 shadow-lg backdrop-blur sm:gap-2 sm:p-2">
         <button
           onClick={onOpenUpload}

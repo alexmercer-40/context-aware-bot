@@ -146,7 +146,7 @@ export default function Sidebar({ onNewChat, refreshKey, isOpen, onClose, onTogg
           onClick={onClose}
         />
         <aside
-          className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-slate-900 transition-transform duration-300 ease-in-out ${
+          className={`fixed left-0 top-0 z-50 flex w-72 flex-col bg-slate-900 transition-transform duration-300 ease-in-out app-shell ${
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
